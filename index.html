@@ -1,0 +1,1585 @@
+<!DOCTYPE html>
+<html lang="bn">
+  <head>
+    <script>
+      document.addEventListener("contextmenu", (event) =>
+        event.preventDefault()
+      );
+      document.addEventListener("keydown", (event) => {
+        if (
+          (event.ctrlKey &&
+            ["u", "s", "i", "j"].includes(event.key.toLowerCase())) ||
+          event.key === "F12"
+        ) {
+          event.preventDefault();
+        }
+      });
+    </script>
+
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Online Exam</title>
+    <!-- Chart.js CDN -->
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&display=swap");
+
+      body {
+        font-family: "Hind Siliguri", sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #f4f4f4;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+      }
+
+      .container {
+        font-family: "Hind Siliguri", sans-serif;
+        width: 100%;
+        margin: auto;
+        background-color: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        min-height: 80vh;
+      }
+
+      .exam-content {
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      h1 {
+        color: #1b0b54;
+        text-align: center;
+        margin-bottom: 10px;
+      }
+
+      #timer {
+        font-size: 20px;
+        color: #1b0b54;
+        margin-bottom: 5px;
+        font-weight: normal;
+        text-align: center;
+      }
+
+      #exam-info {
+        font-size: 16px;
+        color: black;
+        margin-bottom: 20px;
+        text-align: center;
+      }
+
+      #exam {
+        width: 100%;
+        min-height: 100px;
+      }
+
+      .chart-container {
+        width: 200px;
+        height: 200px;
+        margin: 10px auto;
+        background-color: #f9f9f9;
+        border-radius: 15px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        display: none;
+        padding: 10px;
+      }
+
+      .chart-container.visible {
+        display: block;
+      }
+
+      .question-container {
+        text-align: left;
+        margin-bottom: 20px;
+        display: block;
+      }
+
+      .question-label {
+        font-weight: bold;
+        color: #1b0b54;
+        margin-bottom: 10px;
+      }
+
+      .options {
+        margin-top: 10px;
+      }
+
+      .option {
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        padding: 5px;
+        border-radius: 5px;
+        text-transform: uppercase;
+      }
+
+      .circle {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        border: 2px solid #1b0b54;
+        margin-right: 10px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        color: #1b0b54;
+        font-weight: bold;
+        font-size: 18px;
+      }
+
+      .selected .circle {
+        background-color: #1b0b54;
+        color: white;
+      }
+
+      .correct-text {
+        color: green !important;
+      }
+
+      .incorrect-text {
+        color: #ff0800 !important;
+      }
+
+      .unattempted-text {
+        color: orange !important;
+      }
+
+      #submitBtn {
+        font-family: hind siliguri;
+        padding: 15px 30px;
+        background-color: #1b0b54;
+        color: white;
+        border: none;
+        cursor: pointer;
+        font-size: 18px;
+        font-weight: bold;
+        border-radius: 10px;
+        margin-top: 20px;
+        width: 200px;
+        transition: background-color 0.3s ease;
+      }
+
+      #submitBtn:hover {
+        background-color: #1b0b54;
+      }
+
+      .popup {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background-color: white;
+        padding: 20px;
+        width: 300px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+        border-radius: 10px;
+        text-align: center;
+        display: none;
+        z-index: 1000;
+        transition: transform 0.5s ease, opacity 0.5s ease;
+      }
+
+      .popup.slide-out {
+        transform: translate(-50%, -100%);
+        opacity: 0;
+      }
+
+      .popup-header {
+        background-color: #1b0b54;
+        color: white;
+        padding: 10px;
+        font-size: 20px;
+        font-weight: bold;
+        border-radius: 10px 10px 0 0;
+      }
+
+      .popup-body {
+        padding: 15px;
+      }
+
+      .popup-body p {
+        margin: 10px 0;
+      }
+
+      .confirm-btn {
+        font-family: hind siliguri;
+        background-color: #34c759;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        border-radius: 5px;
+        margin: 5px;
+      }
+
+      .confirm-btn:hover {
+        background-color: #34c759;
+      }
+
+      .cancel-btn {
+        background-color: #ff3b30;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        border-radius: 5px;
+        margin: 5px;
+      }
+
+      .cancel-btn:hover {
+        background-color: #e02b21;
+      }
+
+      .explanation-dropdown {
+        display: none;
+        margin-top: 10px;
+      }
+
+      .explanation-dropdown.visible {
+        display: block;
+      }
+
+      .explanation-btn {
+        background-color: #1b0b54;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 14px;
+        font-family: "Hind Siliguri", sans-serif;
+        width: 40%;
+        text-align: left;
+        position: relative;
+      }
+
+      .explanation-btn:hover {
+        background-color: #1b0b54;
+      }
+
+      .explanation-btn::after {
+        content: "▼";
+        position: absolute;
+        right: 10px;
+        font-size: 12px;
+      }
+
+      .explanation-btn.active::after {
+        content: "▲";
+      }
+
+      .explanation-content {
+        display: none;
+        padding: 15px;
+        background-color: #f9f9f9;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        font-size: 14px;
+        color: #000000;
+        text-align: left;
+        max-height: 450px;
+        overflow-y: auto;
+        margin-top: 5px;
+      }
+
+      .explanation-content.visible {
+        display: block;
+      }
+
+      .explanation-content p {
+        margin: 0 0 10px 0;
+      }
+
+      .explanation-content ul {
+        margin: 0;
+        padding-left: 20px;
+      }
+
+      .explanation-content li {
+        margin-bottom: 5px;
+      }
+
+      .explanation-content strong {
+        color: #1b0b54;
+      }
+
+      .explanation-label {
+        font-weight: bold;
+        color: #1b0b54;
+        margin-bottom: 10px;
+        display: block;
+      }
+
+      .locked .option {
+        pointer-events: none;
+        cursor: default;
+      }
+
+      .locked .option.selected {
+        pointer-events: none;
+        cursor: default;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container" id="examContainer">
+      <div class="exam-content">
+        <h1>ইংরেজী অনুশীলন</h1>
+        <div id="timer"></div>
+        <div id="exam-info"></div>
+        <div class="chart-container">
+          <canvas id="scoreChart"></canvas>
+        </div>
+        <div id="exam">
+          <!-- Questions will be generated dynamically -->
+        </div>
+        <button id="submitBtn">সাবমিট</button>
+      </div>
+    </div>
+
+    <div class="popup" id="scorePopup">
+      <div class="popup-header">তোমার স্কোর</div>
+      <div class="popup-body">
+        <p><strong>মোট প্রশ্ন:</strong> <span id="totalQuestions"></span></p>
+        <p>
+          <strong>উত্তর দিয়েছো:</strong>
+          <span style="color: #000000" id="answered"></span>
+        </p>
+        <p>
+          <strong>সঠিক উত্তর:</strong>
+          <span style="color: #0ab853" id="correctAnswers"></span>
+        </p>
+        <p>
+          <strong>ভুল উত্তর:</strong>
+          <span style="color: #f81010" id="wrongAnswers"></span>
+        </p>
+        <p>
+          <strong>অনুত্তরিত:</strong>
+          <span style="color: #ffc801" id="unanswered"></span>
+        </p>
+        <p><strong>তোমার চূড়ান্ত স্কোর:</strong></p>
+        <h2 style="color: #1b0b54"><span id="finalScore"></span></h2>
+        <form id="scoreForm" action="https://formspree.io/f/xpby" method="POST">
+          <input type="hidden" name="userID" id="formUserID" />
+          <input type="hidden" name="finalScore" id="formFinalScore" />
+          <input type="hidden" name="correctAnswers" id="formCorrectAnswers" />
+          <input type="hidden" name="wrongAnswers" id="formWrongAnswers" />
+          <input type="hidden" name="unanswered" id="formUnanswered" />
+          <button
+            type="submit"
+            class="confirm-btn"
+            style="background-color: #1b0b54"
+          >
+            <b>ওকে</b>
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <div class="popup" id="confirmPopup">
+      <div class="popup-header">কনফার্ম করো</div>
+      <div class="popup-body">
+        <p>
+          ভালো করে দেখে নাও! <br />
+          পরীক্ষা শেষ করতে চাও তো?
+        </p>
+        <button class="confirm-btn" onclick="confirmSubmit()">
+          <b>হ্যাঁ</b>
+        </button>
+        <button class="cancel-btn" onclick="cancelSubmit()"><b>না</b></button>
+      </div>
+    </div>
+
+    <script>
+      let chartInstance = null;
+
+      document.addEventListener("DOMContentLoaded", function () {
+        console.log("DOM fully loaded and parsed");
+        const examContainer = document.getElementById("examContainer");
+        if (!examContainer) {
+          console.error("Exam container not found!");
+          return;
+        }
+        try {
+          sessionStorage.setItem("isLoggedIn", "true");
+          sessionStorage.setItem("userID", "anonymous");
+          console.log(
+            "Session storage set: isLoggedIn = true, userID = anonymous"
+          );
+        } catch (e) {
+          console.error("Session storage error:", e);
+        }
+        examContainer.style.display = "block";
+        console.log("Exam container displayed");
+        startTimer();
+        generateQuestions();
+
+        window.addEventListener("beforeunload", function (event) {
+          if (
+            examContainer.style.display === "block" &&
+            sessionStorage.getItem("isLoggedIn") === "true"
+          ) {
+            autoSubmitScore();
+          }
+        });
+      });
+
+      const questions = [
+        {
+          id: 1,
+          question: "An antonym of 'Facilitate' is -",
+          options: {
+            a: "Hallow",
+            b: "Hamper",
+            c: "Hide",
+            d: "Hold",
+          },
+          correct: "b",
+          explanation:
+            "'Facilitate' means to make an action or process easy or easier. 'Hamper' means to hinder or impede the movement or progress of.",
+        },
+        {
+          id: 2,
+          question: "Equivocal শব্দের বিপরীতার্থক শব্দ- (Antonym of Equivocal)",
+          options: {
+            a: "Vague",
+            b: "Mistaken",
+            c: "Quaint",
+            d: "Clearly",
+          },
+          correct: "d",
+          explanation:
+            "'Equivocal' means open to more than one interpretation; ambiguous. Its opposite would be something clear and unambiguous.",
+        },
+        {
+          id: 3,
+          question: "Choose the correct antonym for the word 'Exuberant'-",
+          options: {
+            a: "Happy",
+            b: "Apathetic",
+            c: "Vigorous",
+            d: "Cheerful",
+          },
+          correct: "b",
+          explanation:
+            "'Exuberant' means full of energy, excitement, and cheerfulness. 'Apathetic' means showing or feeling no interest, enthusiasm, or concern.",
+        },
+        {
+          id: 4,
+          question: "Flexible ?",
+          options: {
+            a: "Plastic",
+            b: "Rigid",
+            c: "Elastic",
+            d: "Changing",
+          },
+          correct: "b",
+          explanation:
+            "'Flexible' means able to bend easily without breaking. 'Rigid' means unable to bend or be forced out of shape; not flexible.",
+        },
+        {
+          id: 5,
+          question: "The word 'Emancipation' means-",
+          options: {
+            a: "Advocate",
+            b: "Liberation",
+            c: "Engage",
+            d: "Portrait",
+          },
+          correct: "b",
+          explanation:
+            "'Emancipation' means the fact or process of being set free from legal, social, or political restrictions; liberation.",
+        },
+        {
+          id: 6,
+          question: "Which one is the correct antonym of 'Frugal'?",
+          options: {
+            a: "Extraordinary",
+            b: "Spendthrift",
+            c: "Economical",
+            d: "Authentic",
+          },
+          correct: "b",
+          explanation:
+            "'Frugal' means careful in the use of money or food; sparing or economical. A 'spendthrift' is a person who spends money in an irresponsible or extravagant way.",
+        },
+        {
+          id: 7,
+          question: "The synonym of false is _",
+          options: {
+            a: "wrong",
+            b: "right",
+            c: "bad",
+            d: "good",
+          },
+          correct: "a",
+          explanation:
+            "'False' means not true or in accordance with fact or reality. 'Wrong' is a very close synonym in many contexts.",
+        },
+        {
+          id: 8,
+          question: 'The synonym of "Energetic" is -',
+          options: {
+            a: "Sprightly",
+            b: "Hasty",
+            c: "Humble",
+            d: "Extreme",
+          },
+          correct: "a",
+          explanation:
+            "'Energetic' means possessing or exhibiting great energy. 'Sprightly' means lively; full of energy.",
+        },
+        {
+          id: 9,
+          question: 'The antonym of "Elegant" is _',
+          options: {
+            a: "Eulogy",
+            b: "Modesty",
+            c: "Awkward",
+            d: "Egotistical",
+          },
+          correct: "c",
+          explanation:
+            "'Elegant' means graceful and stylish in appearance or manner. 'Awkward' means difficult to use or handle or causing difficulties; clumsy.",
+        },
+        {
+          id: 10,
+          question: 'The word "Fabricate" is nearest in meaning to-',
+          options: {
+            a: "Manufacture",
+            b: "Demolish",
+            c: "Refresh",
+            d: "Arrange",
+          },
+          correct: "a",
+          explanation:
+            "'Fabricate' means to invent or concoct (something, typically a lie) with deceitful intent, or to construct or manufacture (an industrial product), especially from prepared components. 'Manufacture' is a direct synonym for the latter meaning.",
+        },
+        {
+          id: 11,
+          question:
+            "The noise level in Dhaka has increased exponentially. Here the underlined word means-",
+          options: {
+            a: "amazingly",
+            b: "shockingly",
+            c: "steadily",
+            d: "rapidly",
+          },
+          correct: "d",
+          explanation:
+            "'Exponentially' means (with reference to an increase) more and more rapidly. It describes a very fast rate of increase.",
+        },
+        {
+          id: 12,
+          question:
+            "The bank charges an exorbitant rate of interest. Exorbitant means-",
+          options: {
+            a: "moderate",
+            b: "excessive",
+            c: "fair",
+            d: "increasing",
+          },
+          correct: "b",
+          explanation:
+            "'Exorbitant' means (of a price or amount charged) unreasonably high.",
+        },
+        {
+          id: 13,
+          question: "Synonym of 'Embellish' is-",
+          options: {
+            a: "Adorn",
+            b: "Shock",
+            c: "Impoverish",
+            d: "Destroy",
+          },
+          correct: "a",
+          explanation:
+            "'Embellish' means to make (something) more attractive by the addition of decorative details or features. 'Adorn' means to decorate or add beauty to.",
+        },
+        {
+          id: 14,
+          question: "Choose the correct antonym of 'Enormous'-",
+          options: {
+            a: "Tiny",
+            b: "Huge",
+            c: "Declining",
+            d: "Colossal",
+          },
+          correct: "a",
+          explanation:
+            "'Enormous' means very large in size, quantity, or extent. 'Tiny' means very small.",
+        },
+        {
+          id: 15,
+          question:
+            "A local company has agreed to _ the school team with football shirts.",
+          options: {
+            a: "contribute",
+            b: "give",
+            c: "supply",
+            d: "produce",
+          },
+          correct: "c",
+          explanation:
+            "'Supply' means to make (something needed) available to someone; provide. This fits the context of providing equipment.",
+        },
+        {
+          id: 16,
+          question: "Choose the correct synonym of the word 'Equivocal'.",
+          options: {
+            a: "Uncertain",
+            b: "Certain",
+            c: "Obvious",
+            d: "Lucid",
+          },
+          correct: "a",
+          explanation:
+            "'Equivocal' means open to more than one interpretation; ambiguous or uncertain.",
+        },
+        {
+          id: 17,
+          question: "Select the antonym for 'Embellish'.",
+          options: {
+            a: "Decorate",
+            b: "Adorn",
+            c: "Beautify",
+            d: "Deface",
+          },
+          correct: "d",
+          explanation:
+            "'Embellish' means to make something more attractive by adding details. 'Deface' means to spoil the surface or appearance of (something), e.g., by writing or drawing on it.",
+        },
+        {
+          id: 18,
+          question: 'Which of the following is the antonym of "Eloquence"?',
+          options: {
+            a: "Halting",
+            b: "Incentive",
+            c: "Liberal",
+            d: "Robust",
+          },
+          correct: "a",
+          explanation:
+            "'Eloquence' refers to fluent or persuasive speaking or writing. 'Halting' means slow and hesitant, especially in speech.",
+        },
+        {
+          id: 19,
+          question: "'Foe' is the most nearly similar in meaning to-",
+          options: {
+            a: "Loath",
+            b: "Enemy",
+            c: "Mislay",
+            d: "Fertile",
+          },
+          correct: "b",
+          explanation: "'Foe' means an enemy or opponent.",
+        },
+        {
+          id: 20,
+          question: "'Feeble' is a synonym of-",
+          options: {
+            a: "Weak",
+            b: "Dull",
+            c: "Courage",
+            d: "Strong",
+          },
+          correct: "a",
+          explanation:
+            "'Feeble' means lacking physical strength, especially as a result of age or illness; weak.",
+        },
+        {
+          id: 21,
+          question: "'Eager' is an antonym of-",
+          options: {
+            a: "Reluctant",
+            b: "Anxious",
+            c: "Retire",
+            d: "Forgo",
+          },
+          correct: "a",
+          explanation:
+            "'Eager' means (of a person) keen or ardent in desire or feeling. 'Reluctant' means unwilling and hesitant.",
+        },
+        {
+          id: 22,
+          question: "'Evanescent' is the opposite of -",
+          options: {
+            a: "Lack",
+            b: "Modesty",
+            c: "Innocuousness",
+            d: "Permanence",
+          },
+          correct: "d",
+          explanation:
+            "'Evanescent' means quickly fading or disappearing. 'Permanence' means the state or quality of lasting or remaining unchanged indefinitely.",
+        },
+        {
+          id: 23,
+          question: "'Exploit' is the opposite of _",
+          options: {
+            a: "Failure",
+            b: "Conflict",
+            c: "Gloom",
+            d: "Joy",
+          },
+          correct: "a",
+          explanation:
+            "As a noun, 'exploit' means a bold or daring feat. As a verb, it can mean to make full use of and derive benefit from (a resource) or to use (a person or situation) in an unfair or selfish way. In the context of a bold feat, the opposite would be 'failure'.",
+        },
+        {
+          id: 24,
+          question: "The synonym of 'Furtive' is _",
+          options: {
+            a: "Joyous",
+            b: "Gallant",
+            c: "Secret",
+            d: "Gullible",
+          },
+          correct: "c",
+          explanation:
+            "'Furtive' means attempting to avoid notice or attention, typically because of guilt or a belief that discovery would lead to trouble; secretive.",
+        },
+        {
+          id: 25,
+          question:
+            "It was evident that the damage was very serious. The underlined word can be replaced by:",
+          options: {
+            a: "obvious",
+            b: "uncertain",
+            c: "invisible",
+            d: "hidden",
+          },
+          correct: "a",
+          explanation: "'Evident' means clearly seen or understood; obvious.",
+        },
+        {
+          id: 26,
+          question: "The synonym of 'fussy' is _.",
+          options: {
+            a: "uncomplaining",
+            b: "patient",
+            c: "choosy",
+            d: "stoic",
+          },
+          correct: "c",
+          explanation:
+            "'Fussy' means fastidious about one's needs or requirements; hard to please. 'Choosy' means difficult to please; particular.",
+        },
+        {
+          id: 27,
+          question: "The synonym of futile is-",
+          options: {
+            a: "fruitless",
+            b: "fruitful",
+            c: "meaningful",
+            d: "useless",
+          },
+          correct: "a, d",
+          explanation:
+            "'Futile' means incapable of producing any useful result; pointless. Both 'fruitless' and 'useless' are strong synonyms.",
+        },
+        {
+          id: 28,
+          question:
+            "Plato’s teachings had a profound effect on Aristotle. Profound means-",
+          options: {
+            a: "depth",
+            b: "affection",
+            c: "affiliation",
+            d: "influence",
+          },
+          correct: "d",
+          explanation:
+            "In this context, 'profound effect' means a very great or intense effect/influence. While 'depth' relates to the root meaning of profound, 'influence' captures the meaning in this sentence.",
+        },
+        {
+          id: 29,
+          question:
+            "Identify the pair of words with opposite meanings (antonyms):",
+          options: {
+            a: "Enhance and improve",
+            b: "Proceed and continue",
+            c: "Expand and contract",
+            d: "Begin and initiate",
+          },
+          correct: "c",
+          explanation:
+            "'Expand' means to become or make larger or more extensive. 'Contract' means to decrease in size, number, or range.",
+        },
+        {
+          id: 30,
+          question: "The synonym of 'emancipation' is-",
+          options: {
+            a: "servitude",
+            b: "thraldom",
+            c: "bondage",
+            d: "freedom",
+          },
+          correct: "d",
+          explanation:
+            "'Emancipation' means the fact or process of being set free from legal, social, or political restrictions; liberation or freedom.",
+        },
+        {
+          id: 31,
+          question: "Which one is the synonym of 'fictitious'?",
+          options: {
+            a: "Genuine",
+            b: "Scam",
+            c: "Fabricated",
+            d: "Argumentative",
+          },
+          correct: "c",
+          explanation:
+            "'Fictitious' means not real or true, being imaginary or fabricated. 'Fabricated' means invented or concocted, typically with deceitful intent.",
+        },
+        {
+          id: 32,
+          question: "The synonym for 'efface' is-",
+          options: {
+            a: "improve",
+            b: "wipe out",
+            c: "facial",
+            d: "different faces",
+          },
+          correct: "b",
+          explanation:
+            "'Efface' means to erase (a mark or impression) from a surface, or to make oneself appear insignificant or inconspicuous. 'Wipe out' means to completely destroy or remove.",
+        },
+        {
+          id: 33,
+          question: "Choose the correct synonym for 'ephemeral':",
+          options: {
+            a: "Lasting",
+            b: "Brief",
+            c: "Eternal",
+            d: "Continuous",
+          },
+          correct: "b",
+          explanation: "'Ephemeral' means lasting for a very short time.",
+        },
+        {
+          id: 34,
+          question: "The meaning of the word 'exponential' is-",
+          options: {
+            a: "becoming more precise",
+            b: "becoming more and more known",
+            c: "becoming more and more rapid",
+            d: "becoming more apparent",
+          },
+          correct: "c",
+          explanation:
+            "'Exponential' means (with reference to an increase) more and more rapidly.",
+        },
+        {
+          id: 35,
+          question:
+            '"Nelson Mandela is at the epicenter of our time, ours in South Africa, and yours, wherever you are." The meaning of the underlined word is-',
+          options: {
+            a: "Cynosure",
+            b: "Margin",
+            c: "Periphery",
+            d: "Nexus",
+          },
+          correct: "a",
+          explanation:
+            "'Epicenter' refers to the central or most important point. 'Cynosure' means a person or thing that is the center of attention or admiration.",
+        },
+        {
+          id: 36,
+          question: "Antonym of ENTANGLE _",
+          options: {
+            a: "Untwist",
+            b: "Twist",
+            c: "Hook",
+            d: "Impede",
+          },
+          correct: "a",
+          explanation:
+            "'Entangle' means to twist together or to involve in complications. 'Untwist' is a direct antonym meaning to straighten out from a twisted state.",
+        },
+        {
+          id: 37,
+          question: "Possible synonym of 'fortify' is _",
+          options: {
+            a: "defend",
+            b: "impose",
+            c: "abandon",
+            d: "dilute",
+          },
+          correct: "a",
+          explanation:
+            "'Fortify' means to strengthen (a place) with defensive works so as to protect it against attack. 'Defend' means to protect from harm or danger.",
+        },
+        {
+          id: 38,
+          question:
+            "\"Dreams have fascinated philosophers for thousands of years\". What would be the synonym of the word 'fascinated' in the context of this sentence?",
+          options: {
+            a: "frightened",
+            b: "captivated",
+            c: "fooled",
+            d: "misguided",
+          },
+          correct: "b",
+          explanation:
+            "'Fascinated' means strongly attracted and interested. 'Captivated' means to attract and hold the attention or interest of.",
+        },
+        {
+          id: 39,
+          question: "What is the meaning of 'etiquette'?",
+          options: {
+            a: "Discourtesy",
+            b: "Immorality",
+            c: "Courtesy",
+            d: "Rudeness",
+          },
+          correct: "c",
+          explanation:
+            "'Etiquette' means the customary code of polite behavior in society or among members of a particular profession or group. It refers to proper manners and courtesy.",
+        },
+        {
+          id: 40,
+          question: "A word similar to 'ecstasy' is-",
+          options: {
+            a: "plight",
+            b: "delight",
+            c: "increment",
+            d: "bliss",
+          },
+          correct: "d",
+          explanation:
+            "'Ecstasy' means an overwhelming feeling of great happiness or joyful excitement. 'Bliss' means perfect happiness; great joy.",
+        },
+        {
+          id: 41,
+          question: "Choose the correct synonym for 'Extempore'-",
+          options: {
+            a: "Planned",
+            b: "Improvise",
+            c: "Impromptu",
+            d: "Immediate",
+          },
+          correct: "c",
+          explanation:
+            "'Extempore' means spoken or done without preparation. 'Impromptu' means done without being planned, organized, or rehearsed.",
+        },
+        {
+          id: 42,
+          question: "'Equity' is an antonym of-",
+          options: {
+            a: "Uprightness",
+            b: "Justice",
+            c: "Integrity",
+            d: "Bias",
+          },
+          correct: "d",
+          explanation:
+            "'Equity' means the quality of being fair and impartial. 'Bias' means prejudice in favor of or against one thing, person, or group compared with another, usually in a way considered to be unfair.",
+        },
+        {
+          id: 43,
+          question: "Something that is 'Fresh' is something-",
+          options: {
+            a: "disrespectful",
+            b: "in fairly good condition",
+            c: "pleasant",
+            d: "recently printed or published",
+          },
+          correct: "b",
+          explanation:
+            "While 'fresh' can mean recently made/produced, or new/original, or pleasant/clean, option (b) 'in fairly good condition' captures a common usage, especially when contrasting with something stale or spoiled. In the context of objects, 'fresh' often implies not having deteriorated.",
+        },
+        {
+          id: 44,
+          question: "What is the antonym of 'Famous'?",
+          options: {
+            a: "Opaque",
+            b: "Illiterate",
+            c: "Obscure",
+            d: "Immature",
+          },
+          correct: "c",
+          explanation:
+            "'Famous' means known about by many people. 'Obscure' means not discovered or known about; uncertain.",
+        },
+        {
+          id: 45,
+          question: "What is the meaning of the word 'Euphemism'?",
+          options: {
+            a: "Vague",
+            b: "Inoffensive expression",
+            c: "Verbal play",
+            d: "Wise saying",
+          },
+          correct: "b",
+          explanation:
+            "'Euphemism' means a mild or indirect word or expression substituted for one considered to be too harsh or blunt when referring to something unpleasant or embarrassing. Essentially, an inoffensive expression.",
+        },
+        {
+          id: 46,
+          question: "The synonym of 'Franchise' is-",
+          options: {
+            a: "Utility",
+            b: "Frankness",
+            c: "Privilege",
+            d: "Superficial",
+          },
+          correct: "c",
+          explanation:
+            "'Franchise' can refer to an authorization granted by a government or company to an individual or group enabling them to carry out specified commercial activities, e.g., acting as an agent for a company's products. This is a privilege or right.",
+        },
+        {
+          id: 47,
+          question: "Choose the antonym of the word 'Emancipate'-",
+          options: {
+            a: "Free",
+            b: "Incarcerate",
+            c: "Enclave",
+            d: "Enslave",
+          },
+          correct: "b, d",
+          explanation:
+            "'Emancipate' means to set free. 'Incarcerate' means to imprison or confine. 'Enslave' means to make (someone) a slave.",
+        },
+        {
+          id: 48,
+          question:
+            "It is futile to argue with him, once he has made up his mind. Substitute of the underlined word-",
+          options: {
+            a: "Optimistic",
+            b: "Useless",
+            c: "Gloom",
+            d: "Fertile",
+          },
+          correct: "b",
+          explanation:
+            "'Futile' means incapable of producing any useful result; pointless or useless.",
+        },
+        {
+          id: 49,
+          question: "What is the antonym of 'Foreign'?",
+          options: {
+            a: "Home",
+            b: "Native",
+            c: "Emigrant",
+            d: "Immortal",
+          },
+          correct: "b",
+          explanation:
+            "'Foreign' means of, from, in, or characteristic of a country or language other than one's own. 'Native' means associated with the place of a person's birth, whether as a resident or citizen; belonging to a particular place by birth.",
+        },
+        {
+          id: 50,
+          question: "A synonym of 'Functional' is-",
+          options: {
+            a: "Practical",
+            b: "Passive",
+            c: "Peculiar",
+            d: "Pedantic",
+          },
+          correct: "a",
+          explanation:
+            "'Functional' means designed to be practical and useful rather than attractive. 'Practical' means concerned with the actual doing or use of something rather than with theory and ideas.",
+        },
+      ];
+
+      const totalQuestions = questions.length;
+      let timeLeft = Math.floor(totalQuestions / 2) * 60;
+      const timerElement = document.getElementById("timer");
+      let timerInterval;
+
+      function updateTimer() {
+        const minutes = Math.floor(timeLeft / 60);
+        const seconds = timeLeft % 60;
+        timerElement.innerText = `${toBengaliNumber(
+          minutes
+        )} মিনিট ${toBengaliNumber(seconds)} সেকেন্ড`;
+
+        if (timeLeft > 0) {
+          timeLeft--;
+        } else {
+          stopTimer();
+          confirmSubmit();
+        }
+      }
+
+      function startTimer() {
+        console.log("Starting timer");
+        timerElement.innerText = `${toBengaliNumber(
+          Math.floor(timeLeft / 60)
+        )} মিনিট ${toBengaliNumber(timeLeft % 60)} সেকেন্ড`;
+        timerInterval = setInterval(updateTimer, 1000);
+      }
+
+      function stopTimer() {
+        clearInterval(timerInterval);
+        console.log("Timer stopped");
+      }
+
+      function toBengaliNumber(num) {
+        const bengaliDigits = [
+          "০",
+          "১",
+          "২",
+          "৩",
+          "৪",
+          "৫",
+          "৬",
+          "৭",
+          "৮",
+          "৯",
+        ];
+        let numStr = num.toString();
+
+        let isNegative = num < 0;
+        if (isNegative) {
+          numStr = numStr.substring(1);
+        }
+
+        if (numStr.includes(".")) {
+          let [integerPart, decimalPart] = numStr.split(".");
+          let integerBengali = integerPart
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          let decimalBengali = decimalPart
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          return (
+            (isNegative ? "−" : "") + integerBengali + "." + decimalBengali
+          );
+        } else {
+          let integerBengali = numStr
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          return (isNegative ? "−" : "") + integerBengali;
+        }
+      }
+
+      function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+      }
+
+      function generateQuestions() {
+        console.log("Generating questions");
+        const examContainer = document.querySelector("#exam");
+        if (!examContainer) {
+          console.error("Exam container (#exam) not found!");
+          return;
+        }
+        examContainer.innerHTML = "";
+        console.log("Questions array:", questions);
+        const shuffledQuestions = shuffleArray([...questions]);
+        shuffledQuestions.forEach((question, index) => {
+          console.log(`Generating question ${index + 1}:`, question);
+          const questionDiv = document.createElement("div");
+          questionDiv.classList.add("question-container");
+          questionDiv.setAttribute("data-question", question.id);
+          questionDiv.setAttribute("data-correct", question.correct);
+
+          let optionsHTML = "";
+          for (let option in question.options) {
+            optionsHTML += `
+                                                                          <label class="option" data-option="${option}">
+                                                                            <div class="circle">${option}</div>
+                                                                            <span class="option-text">${question.options[option]}</span>
+                                                                          </label>
+                                                                        `;
+          }
+
+          const explanationHTML = question.explanation
+            ? `<div class="explanation-dropdown">
+                                                                             <button class="explanation-btn">ব্যাখ্যা দেখো</button>
+                                                                             <div class="explanation-content">
+                                                                               <div class="explanation-label">ব্যাখ্যা:</div>
+                                                                               ${question.explanation}
+                                                                             </div>
+                                                                           </div>`
+            : "";
+
+          questionDiv.innerHTML = `
+                                                                        <p class="question-label">${
+                                                                          index +
+                                                                          1
+                                                                        }. ${
+            question.question
+          }</p>
+                                                                        <div class="options">
+                                                                          ${optionsHTML}
+                                                                        </div>
+                                                                        ${explanationHTML}
+                                                                      `;
+          examContainer.appendChild(questionDiv);
+          console.log(`Appended question ${index + 1} to exam container`);
+        });
+
+        const questionContainers = document.querySelectorAll(
+          ".question-container"
+        );
+        console.log(`Found ${questionContainers.length} question containers`);
+        questionContainers.forEach((container, idx) => {
+          console.log(`Setting question ${idx + 1} to visible`);
+          container.style.display = "block";
+        });
+
+        document.querySelectorAll(".option").forEach((option) => {
+          option.addEventListener(
+            "click",
+            function (e) {
+              e.preventDefault();
+              const parent = this.closest(".question-container");
+              if (parent.classList.contains("locked")) return;
+              parent.classList.add("locked");
+              parent.querySelectorAll(".option").forEach((el) => {
+                if (el !== this) {
+                  el.style.pointerEvents = "none";
+                  el.style.cursor = "default";
+                }
+                el.classList.remove("selected");
+              });
+              this.classList.add("selected");
+              console.log(
+                `Option selected for question ${parent.getAttribute(
+                  "data-question"
+                )}: ${this.getAttribute("data-option")}`
+              );
+            },
+            { once: true }
+          );
+        });
+
+        document.querySelectorAll(".explanation-btn").forEach((btn) => {
+          btn.addEventListener("click", function () {
+            const content = this.nextElementSibling;
+            content.classList.toggle("visible");
+            this.classList.toggle("active");
+            console.log("Toggled explanation visibility");
+          });
+        });
+
+        const examInfo = document.getElementById("exam-info");
+        if (examInfo) {
+          examInfo.innerText = `পূর্ণ নম্বরঃ ${toBengaliNumber(
+            totalQuestions
+          )}`;
+          console.log("Exam info updated");
+        } else {
+          console.error("Exam info element not found!");
+        }
+      }
+
+      function initializeChart() {
+        console.log("Initializing chart");
+        const ctx = document.getElementById("scoreChart").getContext("2d");
+        chartInstance = new Chart(ctx, {
+          type: "pie",
+          data: {
+            labels: ["ঠিক উত্তর", "ভুল উত্তর", "অনুত্তরিত"],
+            datasets: [
+              {
+                data: [0, 0, 0],
+                backgroundColor: ["#34c759", "#ff3b30", "#007aff"],
+                borderColor: "#fff",
+                borderWidth: 2,
+                hoverOffset: 10,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: "10%",
+            layout: {
+              padding: 10,
+            },
+            plugins: {
+              legend: {
+                position: "bottom",
+                labels: {
+                  font: {
+                    family: '"Hind Siliguri", sans-serif',
+                    size: 13,
+                    weight: "bold",
+                  },
+                  color: "#333",
+                  padding: 12,
+                  boxWidth: 14,
+                  generateLabels: (chart) => {
+                    const data = chart.data;
+                    return data.labels.map((label, i) => ({
+                      text: label,
+                      font: {
+                        family: '"Hind Siliguri", sans-serif',
+                      },
+                      fillStyle: data.datasets[0].backgroundColor[i],
+                      hidden: !chart.getDataVisibility(i),
+                      index: i,
+                    }));
+                  },
+                },
+              },
+              tooltip: {
+                backgroundColor: "rgba(0, 0, 0, 0.9)",
+                cornerRadius: 6,
+                titleFont: {
+                  family: '"Hind Siliguri", sans-serif',
+                  size: 14,
+                  weight: "bold",
+                },
+                bodyFont: {
+                  family: '"Hind Siliguri", sans-serif',
+                  size: 13,
+                },
+                padding: 10,
+                boxPadding: 5,
+              },
+            },
+            animation: {
+              animateScale: true,
+              animateRotate: true,
+              duration: 1000,
+              easing: "easeOutQuart",
+            },
+            elements: {
+              arc: {
+                borderRadius: 8,
+              },
+            },
+            onClick: (e, elements) => {
+              if (elements.length > 0) {
+                const index = elements[0].index;
+                const filter = ["correct", "wrong", "unanswered"][index];
+                filterQuestions(filter);
+              } else {
+                filterQuestions("all");
+              }
+            },
+          },
+        });
+        console.log("Chart initialized");
+      }
+
+      function filterQuestions(type) {
+        console.log(`Filtering questions by type: ${type}`);
+        document.querySelectorAll(".question-container").forEach((question) => {
+          const status = question.getAttribute("data-status");
+          if (type === "all" || status === type) {
+            question.style.display = "block";
+          } else {
+            question.style.display = "none";
+          }
+        });
+      }
+
+      function showConfirmPopup() {
+        console.log("Showing confirm popup");
+        document.getElementById("confirmPopup").style.display = "block";
+      }
+
+      function autoSubmitScore() {
+        console.log("Auto-submitting score");
+        stopTimer();
+        let score = 0,
+          total = questions.length,
+          answered = 0,
+          correct = 0,
+          wrong = 0,
+          unanswered = 0;
+
+        document.querySelectorAll(".question-container").forEach((question) => {
+          let correctAnswer = question.getAttribute("data-correct");
+          let selectedOption = question.querySelector(".option.selected");
+
+          if (selectedOption) {
+            answered++;
+            let chosenAnswer = selectedOption.getAttribute("data-option");
+            if (chosenAnswer === correctAnswer) {
+              score += 1;
+              correct++;
+              question.setAttribute("data-status", "correct");
+            } else {
+              score -= 0.25;
+              wrong++;
+              question.setAttribute("data-status", "wrong");
+            }
+          } else {
+            unanswered++;
+            question.setAttribute("data-status", "unanswered");
+          }
+        });
+
+        const userID = sessionStorage.getItem("userID") || "anonymous";
+        const formData = new FormData();
+        formData.append("userID", userID);
+        formData.append("finalScore", score.toFixed(2));
+        formData.append("correctAnswers", correct);
+        formData.append("wrongAnswers", wrong);
+        formData.append("unanswered", unanswered);
+
+        const url = "https://formspree.io/f/xpwy";
+        navigator.sendBeacon(url, formData);
+        console.log("Auto-submission sent via sendBeacon for userID:", userID);
+      }
+
+      function confirmSubmit() {
+        console.log("Confirming submission");
+        document.getElementById("confirmPopup").style.display = "none";
+        stopTimer();
+        let score = 0,
+          total = questions.length,
+          answered = 0,
+          correct = 0,
+          wrong = 0,
+          unanswered = 0;
+
+        document
+          .querySelectorAll(".question-container")
+          .forEach((question, index) => {
+            let correctAnswer = question.getAttribute("data-correct");
+            let selectedOption = question.querySelector(".option.selected");
+
+            if (selectedOption) {
+              answered++;
+              let chosenAnswer = selectedOption.getAttribute("data-option");
+              if (chosenAnswer === correctAnswer) {
+                selectedOption
+                  .querySelector(".option-text")
+                  .classList.add("correct-text");
+                score += 1;
+                correct++;
+                question.setAttribute("data-status", "correct");
+              } else {
+                selectedOption
+                  .querySelector(".option-text")
+                  .classList.add("incorrect-text");
+                question
+                  .querySelector(
+                    `[data-option="${correctAnswer}"] .option-text`
+                  )
+                  .classList.add("correct-text");
+                score -= 0.25;
+                wrong++;
+                question.setAttribute("data-status", "wrong");
+              }
+            } else {
+              question
+                .querySelector(`[data-option="${correctAnswer}"] .option-text`)
+                .classList.add("unattempted-text");
+              unanswered++;
+              question.setAttribute("data-status", "unanswered");
+            }
+            question.style.display = "block";
+
+            const explanationDropdown = question.querySelector(
+              ".explanation-dropdown"
+            );
+            if (explanationDropdown) {
+              explanationDropdown.classList.add("visible");
+            }
+          });
+
+        const chartContainer = document.querySelector(".chart-container");
+        chartContainer.classList.add("visible");
+        if (!chartInstance) {
+          initializeChart();
+        }
+        chartInstance.data.datasets[0].data = [correct, wrong, unanswered];
+        chartInstance.update();
+        console.log("Chart updated with data:", [correct, wrong, unanswered]);
+
+        const userID = sessionStorage.getItem("userID") || "anonymous";
+        document.getElementById("totalQuestions").innerText =
+          toBengaliNumber(total);
+        document.getElementById("answered").innerText =
+          toBengaliNumber(answered);
+        document.getElementById("correctAnswers").innerText =
+          toBengaliNumber(correct);
+        document.getElementById("wrongAnswers").innerText =
+          toBengaliNumber(wrong);
+        document.getElementById("unanswered").innerText =
+          toBengaliNumber(unanswered);
+        document.getElementById("finalScore").innerText = toBengaliNumber(
+          score.toFixed(2)
+        );
+
+        document.getElementById("formUserID").value = userID;
+        document.getElementById("formFinalScore").value = score.toFixed(2);
+        document.getElementById("formCorrectAnswers").value = correct;
+        document.getElementById("formWrongAnswers").value = wrong;
+        document.getElementById("formUnanswered").value = unanswered;
+
+        document.getElementById("submitBtn").style.display = "none";
+
+        document.getElementById("scorePopup").style.display = "block";
+
+        const form = document.getElementById("scoreForm");
+        fetch(form.action, {
+          method: "POST",
+          body: new FormData(form),
+          headers: {
+            Accept: "application/json",
+          },
+        })
+          .then((response) => {
+            if (response.ok) {
+              console.log("Form submitted successfully");
+              form.reset();
+            } else {
+              console.error("Form submission failed:", response.statusText);
+            }
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+          });
+      }
+
+      function cancelSubmit() {
+        console.log("Canceling submission");
+        document.getElementById("confirmPopup").style.display = "none";
+      }
+
+      document
+        .getElementById("submitBtn")
+        .addEventListener("click", function () {
+          console.log("Submit button clicked");
+          showConfirmPopup();
+        });
+
+      function closePopup() {
+        console.log("Closing score popup");
+        const scorePopup = document.getElementById("scorePopup");
+        scorePopup.classList.add("slide-out");
+        setTimeout(() => {
+          scorePopup.style.display = "none";
+          scorePopup.classList.remove("slide-out");
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }, 500);
+      }
+
+      document
+        .getElementById("scoreForm")
+        .addEventListener("submit", function (event) {
+          event.preventDefault();
+          console.log("Score form submitted");
+          closePopup();
+        });
+    </script>
+  </body>
+</html>
